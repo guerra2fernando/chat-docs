@@ -16,14 +16,17 @@ app.message('message.im', async({ message, say }) => {
     await processMessage(message, say);
 });
 
+// Listen for mentions of the bot in any channel
+app.event('app_mention', async({ event, say }) => {
+    await processMessage(event, say);
+});
+
 // Register a slash command (e.g., "/superduperdb") and handle it
 app.command('/superduperdb', async({ command, ack, say }) => {
     // Acknowledge the command request
     await ack();
 
-    if (command.text) {
-        await processMessage({ text: command.text }, say);
-    }
+    await processMessage({ text: command.text }, say);
 });
 
 async function processMessage(message, say) {
