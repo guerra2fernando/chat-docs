@@ -1,21 +1,23 @@
 const { App } = require('@slack/bolt');
-const express = require('express');
 const axios = require('axios');
 
-const app = express();
-
+// Initialize Slack App with environment variables
 const slackApp = new App({
     token: process.env.SLACK_BOT_TOKEN,
     signingSecret: process.env.SLACK_SIGNING_SECRET,
-    appToken: process.env.SLACK_APP_TOKEN,
-    socketMode: true, // Enable this for receiving events via WebSocket (useful for Vercel deployment)
+    // Socket mode not needed for Vercel deployment
 });
 
-slackApp.message(async({ message, say }) => {
-    if (message.text) {
-        try {
+module.exports = async(req, res) => {
+    try {
+        // Your existing Slack event handling logic
+        const { body } = req;
+        const slackEvent = body.event;
+
+        // Example: Call external API if a message event is received
+        if (slackEvent && slackEvent.type === 'message') {
             const response = await axios.post('https://chat-with-your-docs-backend-3-spring-bush-7707.fly.dev/query', {
-                query: message.text,
+                query: slackEvent.text,
                 collection_name: "superduperdb"
             }, {
                 headers: {
@@ -24,19 +26,13 @@ slackApp.message(async({ message, say }) => {
             });
 
             const answer = response.data.answer;
-            await say(answer);
-        } catch (error) {
-            console.error(error);
-            await say("Sorry, I couldn't fetch the information.");
+            // Respond back to Slack (this would need to be adapted to use Slack's APIs or SDKs)
+            res.status(200).send(answer);
+        } else {
+            res.status(200).send('Event type not supported');
         }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
     }
-});
-
-(async() => {
-    await slackApp.start(process.env.PORT || 3000);
-    console.log('Slack bot is running!');
-})();
-
-app.use('/slack/events', slackApp.requestListener());
-
-module.exports = app;
+};
