@@ -11,25 +11,8 @@ const app = new App({
     signingSecret: signingSecret,
 });
 
-// Listen for direct messages to the bot
-app.message('message.im', async({ message, say }) => {
-    await processMessage(message, say);
-});
-
-// Listen for mentions of the bot in any channel
-app.event('app_mention', async({ event, say }) => {
-    await processMessage(event, say);
-});
-
-// Register a slash command (e.g., "/superduperdb") and handle it
-app.command('/superduperdb', async({ command, ack, say }) => {
-    // Acknowledge the command request
-    await ack();
-
-    await processMessage({ text: command.text }, say);
-});
-
-async function processMessage(message, say) {
+// Listen for messages in channels the bot is a member of
+app.message(async({ message, say }) => {
     // Check if the message contains text
     if (message.text) {
         try {
@@ -43,27 +26,18 @@ async function processMessage(message, say) {
                 }
             });
 
-            // Extract the answer and source URLs from the API response
-            const { answer, source_urls } = response.data;
+            // Extract the answer from the API response
+            const answer = response.data.answer;
 
-            // Format the answer and optionally the source URLs to send back
-            let replyText = answer;
-            if (source_urls && source_urls.length > 0) {
-                replyText += "\nSources:";
-                source_urls.forEach(url => {
-                    replyText += `\n- <${url}|Click here>`;
-                });
-            }
-
-            // Use the `say` method to send the formatted answer back
-            await say(replyText);
+            // Use the `say` method to send the answer back to the same channel
+            await say(answer);
         } catch (error) {
-            // Log the error and send a friendly error message
+            // Log the error and send a friendly error message to the channel
             console.error(error);
             await say("Sorry, I couldn't fetch the information.");
         }
     }
-}
+});
 
 // Start your app
 (async() => {
